@@ -16,9 +16,14 @@ class SessionManager:
         self._sessions: OrderedDict[str, LLMServeEnvironment] = OrderedDict()
         self._max_sessions = max_sessions
 
-    def create(self, task_id: str, seed: int | None = None) -> tuple[str, LLMServeEnvironment]:
+    def create(
+        self,
+        task_id: str,
+        seed: int | None = None,
+        episode_id: str | None = None,
+    ) -> tuple[str, LLMServeEnvironment]:
         env = LLMServeEnvironment(seed=seed or 42)
-        env.reset(task_id=task_id, seed=seed)
+        env.reset(task_id=task_id, seed=seed, episode_id=episode_id)
         session_id = env.state.episode_id
 
         with self._lock:

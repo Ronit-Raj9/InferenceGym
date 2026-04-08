@@ -10,6 +10,7 @@ from llmserve_env.models import EpisodeLog, ServeAction, ServeObservation, Serve
 class LLMServeEnv:
     def __init__(self, base_url: str) -> None:
         self.base_url = base_url.rstrip("/")
+        self.session_id: str | None = None
 
     @classmethod
     def from_url(cls, base_url: str) -> "LLMServeEnv":
@@ -21,16 +22,21 @@ class LLMServeEnv:
 
     def reset(self, task_id: str, seed: int | None = None) -> ServeObservation:
         payload = self._post("/reset", {"task_id": task_id, "seed": seed})
+        self.session_id = payload.get("session_id")
         return self._parse_observation_payload(payload)
 
     def step(self, action: dict[str, Any] | ServeAction) -> tuple[ServeObservation, float, bool, dict[str, Any]]:
+        if self.session_id is None:
+            raise RuntimeError("reset() must be called before step() so the client has a session_id.")
         action_payload = action.model_dump(mode="json") if isinstance(action, ServeAction) else action
-        payload = self._post("/step", {"action": action_payload})
+        payload = self._post("/step", {"action": action_payload, "session_id": self.session_id})
         observation = self._parse_observation_payload(payload)
         return observation, float(payload["reward"]), bool(payload["done"]), observation.metadata
 
     def state(self) -> ServeState:
-        payload = self._get("/state")
+        if self.session_id is None:
+            raise RuntimeError("reset() must be called before state() so the client has a session_id.")
+        payload = self._get(f"/state?session_id={self.session_id}")
         return ServeState.model_validate(payload)
 
     def tasks(self) -> dict[str, Any]:
@@ -67,4 +73,3 @@ class LLMServeEnv:
         req = request.Request(f"{self.base_url}{path}", data=body, headers=headers, method="POST")
         with request.urlopen(req) as response:
             return json.loads(response.read().decode("utf-8"))
-
