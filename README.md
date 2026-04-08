@@ -213,12 +213,18 @@ docker build -t llmserve-env .
 docker run --rm -p 7860:7860 llmserve-env
 ```
 
+For a fully clean rebuild, use:
+
+```bash
+docker build --no-cache -t llmserve-env .
+```
+
 Then verify:
 
 - API: `http://localhost:7860/health`
 - OpenEnv UI: `http://localhost:7860/web`
 
-`server/Dockerfile` is kept only as a compatibility mirror. The repo-level `Dockerfile` is the one to use for local verification and submission hardening.
+The root `Dockerfile` builds a CPU-only image and packages the tracked `weights/` directory into the container. That is the Dockerfile used for local verification and Hugging Face submission. `server/Dockerfile` is kept only as a compatibility mirror.
 
 ## Baseline Inference
 
@@ -305,8 +311,9 @@ Recommended deployment path:
 1. Push this repository to the Space.
 2. Use the root `Dockerfile`.
 3. Set the Space port to `7860`.
-4. Add `OPENAI_API_KEY` as a secret only if you want the OpenAI baseline endpoint to run in the deployed Space.
-5. After deployment, verify:
+4. Make sure the repository includes the `weights/` directory; the Docker image copies those model files at build time.
+5. Add `OPENAI_API_KEY` as a secret only if you want the OpenAI baseline endpoint to run in the deployed Space.
+6. After deployment, verify:
    - `/health`
    - `/tasks`
    - `/web`
