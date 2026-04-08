@@ -21,7 +21,6 @@ COPY server ./server
 COPY agents ./agents
 COPY rl ./rl
 COPY data ./data
-COPY weights ./weights
 COPY inference.py evaluate.py train.py ./
 
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -42,7 +41,6 @@ COPY server ./server
 COPY agents ./agents
 COPY rl ./rl
 COPY data ./data
-COPY weights ./weights
 COPY inference.py evaluate.py train.py ./
 
 EXPOSE 7860
