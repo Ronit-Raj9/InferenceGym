@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from openenv.core import create_fastapi_app
 from dotenv import load_dotenv
@@ -14,7 +13,7 @@ from llmserve_env.task_catalog import get_action_schema, get_task_catalog
 from server.baseline_inference import create_local_runner, run_baseline_suite
 from server.grader import GraderEngine
 from server.llmserve_environment import LLMServeEnvironment
-from server.schemas import GraderRequest, ResetRequest, StepRequest
+from server.schemas import GraderRequest
 from server.session_manager import SessionManager
 from server.web_ui import create_web_app
 
@@ -38,20 +37,7 @@ def get_env() -> LLMServeEnvironment:
     return shared_env
 
 
-def _remove_routes(app: FastAPI, paths: Iterable[str]) -> None:
-    blocked = set(paths)
-    app.router.routes[:] = [route for route in app.router.routes if getattr(route, "path", None) not in blocked]
-
-
 def _register_extra_routes(app: FastAPI) -> FastAPI:
-    def _resolve_env(session_id: str | None) -> LLMServeEnvironment:
-        if not session_id:
-            return shared_env
-        try:
-            return session_manager.get(session_id)
-        except KeyError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-
     @app.get("/")
     def root() -> RedirectResponse:
         return RedirectResponse(url="/web", status_code=307)
@@ -68,40 +54,6 @@ def _register_extra_routes(app: FastAPI) -> FastAPI:
             "seed": shared_env.seed,
             "active_sessions": session_manager.count(),
         }
-
-    @app.post("/reset")
-    def reset(payload: ResetRequest) -> dict[str, object]:
-        session_id, env = session_manager.create(
-            task_id=payload.task_id,
-            seed=payload.seed,
-            episode_id=payload.episode_id,
-        )
-        observation = env.observations[-1]
-
-        return {
-            "session_id": session_id,
-            "observation": observation.model_dump(mode="json"),
-            "reward": observation.reward,
-            "done": observation.done,
-            "metadata": observation.metadata,
-        }
-
-    @app.post("/step")
-    def step(payload: StepRequest) -> dict[str, object]:
-        env = _resolve_env(payload.session_id)
-        observation = env.step(payload.action)
-        return {
-            "session_id": payload.session_id or env.state.episode_id,
-            "observation": observation.model_dump(mode="json"),
-            "reward": observation.reward,
-            "done": observation.done,
-            "metadata": observation.metadata,
-        }
-
-    @app.get("/state")
-    def state(session_id: str | None = Query(default=None)) -> dict[str, object]:
-        env = _resolve_env(session_id)
-        return env.state.model_dump(mode="json")
 
     @app.post("/grader")
     def grade(payload: GraderRequest | None = None) -> dict[str, object]:
@@ -154,7 +106,6 @@ def create_application(enable_web: bool = True) -> FastAPI:
         ServeAction,
         ServeObservation,
     )
-    _remove_routes(app, {"/reset", "/step", "/state"})
     if enable_web:
         app = create_web_app(app, session_manager, shared_env)
     return _register_extra_routes(app)
