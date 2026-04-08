@@ -26,17 +26,19 @@ class LLMServeEnv:
         return self._parse_observation_payload(payload)
 
     def step(self, action: dict[str, Any] | ServeAction) -> tuple[ServeObservation, float, bool, dict[str, Any]]:
-        if self.session_id is None:
-            raise RuntimeError("reset() must be called before step() so the client has a session_id.")
         action_payload = action.model_dump(mode="json") if isinstance(action, ServeAction) else action
-        payload = self._post("/step", {"action": action_payload, "session_id": self.session_id})
+        body: dict[str, Any] = {"action": action_payload}
+        if self.session_id is not None:
+            body["session_id"] = self.session_id
+        payload = self._post("/step", body)
         observation = self._parse_observation_payload(payload)
+        if payload.get("session_id") and self.session_id is None:
+            self.session_id = str(payload["session_id"])
         return observation, float(payload["reward"]), bool(payload["done"]), observation.metadata
 
     def state(self) -> ServeState:
-        if self.session_id is None:
-            raise RuntimeError("reset() must be called before state() so the client has a session_id.")
-        payload = self._get(f"/state?session_id={self.session_id}")
+        path = f"/state?session_id={self.session_id}" if self.session_id is not None else "/state"
+        payload = self._get(path)
         return ServeState.model_validate(payload)
 
     def tasks(self) -> dict[str, Any]:
