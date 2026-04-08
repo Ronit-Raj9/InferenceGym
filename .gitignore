@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/
+.eggs/
+artifacts/
+
+# Environment / secrets
+.env
+.env.local
+
+# Data files (serve from HF repo, not git)
+*.parquet
+*.arrow
+*.pt
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Docker & Logs
+*.log
+*.txt

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llmserve-env"
+version = "0.1.0"
+description = "OpenEnv-compliant RL environment for LLM inference serving control"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.32,<1.0",
+  "pydantic>=2.9,<3.0",
+  "openai>=2.7.2,<3.0",
+  "openenv-core>=0.2.0",
+  "python-dotenv>=1.0,<2.0",
+  "numpy>=1.26,<3.0",
+  "scipy>=1.12,<2.0",
+  "pandas>=2.2,<3.0",
+  "pyarrow>=15.0,<20.0",
+  "httpx>=0.27,<1.0",
+  "gradio>=5.0,<7.0",
+  "torch>=2.3,<3.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+llmserve-baseline = "server.baseline_inference:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+  "pytest-asyncio>=0.24,<1.0",
+  "ruff>=0.4,<1.0",
+]
+demo = [
+  "stable-baselines3>=2.3,<3.0",
+  "gymnasium>=0.29,<1.0",
+  "matplotlib>=3.8,<4.0",
+]
+
+[tool.setuptools]
+packages = ["llmserve_env", "server", "agents", "rl"]
+
+[tool.setuptools.package-data]
+server = ["data/*.json", "data/**/*.parquet", "data/**/.gitkeep"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]

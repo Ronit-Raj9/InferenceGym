@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  llmserve:
+    build: .
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./llmserve_env:/app/llmserve_env
+      - ./server:/app/server
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      uvicorn server.app:app
+      --host 0.0.0.0
+      --port 7860
+      --reload
+      --reload-dir /app/server
+      --reload-dir /app/llmserve_env

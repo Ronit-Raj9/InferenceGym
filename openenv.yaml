@@ -1,0 +1,69 @@
+name: InferenceGym
+version: "1.0.0"
+description: >
+  OpenEnv-compliant RL environment for LLM inference serving optimization.
+  Teaches agents to make real-time serving configuration decisions for LLM
+  infrastructure using trace-driven simulation grounded in Orca, vLLM, and Decima.
+author: team-llmserve
+tags:
+  - openenv
+  - rl
+  - llm
+  - inference
+  - serving
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
+  tasks: /tasks
+  grader: /grader
+  baseline: /baseline
+  health: /health
+tasks:
+  - id: static_workload
+    name: Static Uniform Workload
+    description: "Steady 10 rps traffic with uniform prompt lengths. Tests basic queue pressure response."
+    difficulty: easy
+    episode_length: 200
+    slo_thresholds:
+      p99_ttft_ms: 500
+  - id: bursty_workload
+    name: Bursty ShareGPT Workload
+    description: "Alternating quiet/burst phases with real ShareGPT prompt distributions. Tests non-stationary traffic adaptation."
+    difficulty: medium
+    episode_length: 120
+    slo_thresholds:
+      p99_ttft_ms: 300
+  - id: adversarial_multitenant
+    name: Adversarial Multi-Tenant Serving
+    description: "Sinusoidal arrival with mega-prompt injections and multi-priority routing. Challenges frontier models."
+    difficulty: hard
+    episode_length: 200
+    slo_thresholds:
+      p99_ttft_ms: 200
+observation_space:
+  - { name: queue_depth, type: int, min: 0, max: 10000 }
+  - { name: active_requests, type: int, min: 0, max: 512 }
+  - { name: kv_cache_occupancy, type: float, min: 0.0, max: 1.0 }
+  - { name: mean_prompt_length, type: float, min: 0.0, max: 10000.0 }
+  - { name: p50_ttft_ms, type: float, min: 0.0, max: 10000.0 }
+  - { name: p99_ttft_ms, type: float, min: 0.0, max: 10000.0 }
+  - { name: p50_itl_ms, type: float, min: 0.0, max: 1000.0 }
+  - { name: throughput_tps, type: float, min: 0.0, max: 1000.0 }
+  - { name: slo_compliance_rate, type: float, min: 0.0, max: 1.0 }
+  - { name: gpu_memory_used_gb, type: float, min: 0.0, max: 80.0 }
+  - { name: estimated_cost_per_1k, type: float, min: 0.0, max: 1.0 }
+  - { name: request_arrival_rate, type: float, min: 0.0, max: 500.0 }
+  - { name: spec_acceptance_rate, type: float, min: 0.0, max: 1.0 }
+  - { name: eviction_events, type: int, min: 0, max: 1000 }
+  - { name: step_index, type: int, min: 0, max: 200 }
+  - { name: task_id, type: string }
+action_space:
+  - { name: batch_cap, type: int, min: 1, max: 512 }
+  - { name: kv_budget_fraction, type: float, min: 0.1, max: 1.0 }
+  - { name: speculation_depth, type: int, min: 0, max: 8 }
+  - { name: quantization_tier, type: enum, values: [FP16, INT8, INT4] }
+  - { name: prefill_decode_split, type: bool }
+  - { name: priority_routing, type: bool }
+reward_range: [-1.0, 1.0]
+grader_range: [0.0, 1.0]

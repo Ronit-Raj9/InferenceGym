@@ -1,0 +1,77 @@
+{
+  "tasks": [
+    {
+      "id": "static_workload",
+      "name": "Static Uniform Workload",
+      "difficulty": "easy",
+      "trace_file": "traces/static_workload_trace.parquet",
+      "arrival_rate_rps": 5.0,
+      "burst_rate_rps": 10.0,
+      "burst_every_steps": 0,
+      "burst_length_steps": 0,
+      "step_window_s": 5.0,
+      "max_steps": 200,
+      "slo_p99_ttft_ms": 500.0,
+      "memory_cap_gb": 38.0,
+      "cost_cap_per_1k": 0.0030,
+      "priority_fraction": 0.0,
+      "prompt_distribution": {
+        "type": "uniform",
+        "min": 512,
+        "max": 512
+      }
+    },
+    {
+      "id": "bursty_workload",
+      "name": "Bursty ShareGPT Workload",
+      "difficulty": "medium",
+      "trace_file": "traces/bursty_workload_trace.parquet",
+      "arrival_rate_rps": 25.0,
+      "burst_rate_rps": 80.0,
+      "burst_every_steps": 12,
+      "burst_length_steps": 3,
+      "step_window_s": 5.0,
+      "max_steps": 120,
+      "slo_p99_ttft_ms": 300.0,
+      "memory_cap_gb": 38.0,
+      "cost_cap_per_1k": 0.0025,
+      "priority_fraction": 0.05,
+      "prompt_distribution": {
+        "type": "trace_sample",
+        "sample_file": "traces/sharegpt_prompt_lengths.parquet"
+      }
+    },
+    {
+      "id": "adversarial_multitenant",
+      "name": "Adversarial Multi-Tenant Serving",
+      "difficulty": "hard",
+      "trace_file": "traces/adversarial_multitenant_trace.parquet",
+      "arrival_rate_rps": 40.0,
+      "arrival_pattern": "sinusoidal",
+      "arrival_floor_rps": 5.0,
+      "arrival_ceiling_rps": 200.0,
+      "arrival_cycle_steps": 20,
+      "burst_rate_rps": 200.0,
+      "burst_every_steps": 15,
+      "burst_length_steps": 4,
+      "step_window_s": 6.0,
+      "max_steps": 200,
+      "slo_p99_ttft_ms": 200.0,
+      "memory_cap_gb": 38.0,
+      "cost_cap_per_1k": 0.0020,
+      "priority_fraction": 0.20,
+      "prompt_distribution": {
+        "type": "bimodal",
+        "long_fraction": 0.30,
+        "short": {
+          "min": 32,
+          "max": 128
+        },
+        "long": {
+          "min": 4096,
+          "max": 8192
+        }
+      }
+    }
+  ]
+}
