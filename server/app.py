@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Iterable
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import RedirectResponse
@@ -35,6 +36,11 @@ session_manager = SessionManager()
 
 def get_env() -> LLMServeEnvironment:
     return shared_env
+
+
+def _remove_routes(app: FastAPI, paths: Iterable[str]) -> None:
+    blocked = set(paths)
+    app.router.routes[:] = [route for route in app.router.routes if getattr(route, "path", None) not in blocked]
 
 
 def _register_extra_routes(app: FastAPI) -> FastAPI:
@@ -148,6 +154,7 @@ def create_application(enable_web: bool = True) -> FastAPI:
         ServeAction,
         ServeObservation,
     )
+    _remove_routes(app, {"/reset", "/step", "/state"})
     if enable_web:
         app = create_web_app(app, session_manager, shared_env)
     return _register_extra_routes(app)

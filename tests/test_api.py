@@ -26,6 +26,14 @@ def test_required_routes_registered() -> None:
         assert path in routes
 
 
+def test_session_routes_are_not_duplicated() -> None:
+    app = create_application(enable_web=False)
+    paths = [getattr(route, "path", None) for route in app.routes]
+    assert paths.count("/reset") == 1
+    assert paths.count("/step") == 1
+    assert paths.count("/state") == 1
+
+
 def test_health_endpoint_direct() -> None:
     data = _call(_route_map()["/health"])
     status = data["status"] if isinstance(data, dict) else data.status

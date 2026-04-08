@@ -28,7 +28,10 @@ class SimulatedServingBackend:
     mode = "sim"
 
     def __init__(self, seed: int = 42) -> None:
-        self.simulator = TraceSimulator(seed=seed)
+        try:
+            self.simulator = TraceSimulator(seed=seed)
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize TraceSimulator in SimulatedServingBackend: {e}") from e
 
     def reset(self, seed: int | None = None) -> None:
         self.simulator.reset(seed=seed)

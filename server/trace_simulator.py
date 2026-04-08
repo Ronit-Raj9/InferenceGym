@@ -13,9 +13,21 @@ from server.speculative_decoder import SpeculativeDecoder
 class TraceSimulator:
     def __init__(self, seed: int = 42) -> None:
         self.seed = seed
-        self.kv_cache = KVCacheSimulator()
-        self.speculative_decoder = SpeculativeDecoder()
-        self.lookup_table = load_lookup_table("lookup_tables/latency_table.parquet")
+        try:
+            self.kv_cache = KVCacheSimulator()
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize KVCacheSimulator: {e}") from e
+        
+        try:
+            self.speculative_decoder = SpeculativeDecoder()
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize SpeculativeDecoder: {e}") from e
+        
+        try:
+            self.lookup_table = load_lookup_table("lookup_tables/latency_table.parquet")
+        except Exception as e:
+            raise RuntimeError(f"Failed to load lookup table: {e}") from e
+        
         self.batch_history: list[int] = []
 
     def reset(self, seed: int | None = None) -> None:

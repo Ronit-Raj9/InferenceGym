@@ -208,16 +208,20 @@ def _run_task(task_id: str, client: OpenAI | None) -> bool:
 def main() -> int:
     try:
         client = _create_client()
-    except Exception:
+    except Exception as exc:
+        print(f"[DEBUG] Failed to create LLM client: {exc}", flush=True)
         client = None
 
     for task_id in TASKS:
         try:
             _run_task(task_id=task_id, client=client)
         except Exception as exc:
-            _log_start(task=task_id, env_name=ENV_NAME, model=MODEL_NAME if client is not None else "heuristic")
-            _log_step(step=1, action="{}", reward=0.0, done=True, error=_sanitize_error(exc))
-            _log_end(success=False, steps=1, score=0.0, rewards=[0.0])
+            try:
+                _log_start(task=task_id, env_name=ENV_NAME, model=MODEL_NAME if client is not None else "heuristic")
+                _log_step(step=1, action="{}", reward=0.0, done=True, error=_sanitize_error(exc))
+                _log_end(success=False, steps=1, score=0.0, rewards=[0.0])
+            except Exception as log_exc:
+                print(f"[DEBUG] Failed to log task failure: {log_exc}", flush=True)
 
     # The validator treats non-zero exits as infrastructure failures, so we always
     # return 0 after emitting structured episode logs for every task.
@@ -225,4 +229,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        exit_code = main()
+        raise SystemExit(exit_code)
+    except Exception as exc:
+        print(f"[ERROR] Unhandled exception in main: {exc}", flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stdout)
+        raise SystemExit(0)

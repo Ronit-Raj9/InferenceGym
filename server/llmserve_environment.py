@@ -19,8 +19,16 @@ class LLMServeEnvironment(Environment[ServeAction, ServeObservation, ServeState]
     def __init__(self, seed: int = 42, mode: str | None = None, backend: ServingBackend | None = None) -> None:
         super().__init__()
         self.seed = seed
-        self.backend = backend or create_serving_backend(mode=mode, seed=seed)
-        self.reward_calculator = RewardCalculator()
+        try:
+            self.backend = backend or create_serving_backend(mode=mode, seed=seed)
+        except Exception as e:
+            raise RuntimeError(f"Failed to create serving backend: {e}") from e
+        
+        try:
+            self.reward_calculator = RewardCalculator()
+        except Exception as e:
+            raise RuntimeError(f"Failed to create reward calculator: {e}") from e
+        
         self.task_config: dict[str, Any] | None = None
         self.workload_generator: WorkloadGenerator | None = None
         self.slo_monitor: SLOMonitor | None = None
