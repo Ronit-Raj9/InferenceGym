@@ -13,7 +13,7 @@ from llmserve_env.task_catalog import get_action_schema, get_task_catalog
 from server.baseline_inference import create_local_runner, run_baseline_suite
 from server.grader import GraderEngine
 from server.llmserve_environment import LLMServeEnvironment
-from server.schemas import GraderRequest
+from server.schemas import GraderRequest, ResetRequest
 from server.session_manager import SessionManager
 from server.web_ui import create_web_app
 
@@ -37,10 +37,31 @@ def get_env() -> LLMServeEnvironment:
     return shared_env
 
 
+def _remove_routes(app: FastAPI, paths: set[str]) -> None:
+    app.router.routes[:] = [route for route in app.router.routes if getattr(route, "path", None) not in paths]
+
+
 def _register_extra_routes(app: FastAPI) -> FastAPI:
     @app.get("/")
     def root() -> RedirectResponse:
         return RedirectResponse(url="/web", status_code=307)
+
+    @app.post("/reset")
+    def reset(payload: ResetRequest | None = None) -> dict[str, object]:
+        payload = payload or ResetRequest()
+        session_id, env = session_manager.create(
+            task_id=payload.task_id,
+            seed=payload.seed,
+            episode_id=payload.episode_id,
+        )
+        observation = env.observations[-1]
+        return {
+            "session_id": session_id,
+            "observation": observation.model_dump(mode="json"),
+            "reward": observation.reward,
+            "done": observation.done,
+            "metadata": observation.metadata,
+        }
 
     @app.get("/tasks")
     def tasks() -> dict[str, object]:
@@ -106,6 +127,7 @@ def create_application(enable_web: bool = True) -> FastAPI:
         ServeAction,
         ServeObservation,
     )
+    _remove_routes(app, {"/reset"})
     if enable_web:
         app = create_web_app(app, session_manager, shared_env)
     return _register_extra_routes(app)
