@@ -7,24 +7,22 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
-COPY pyproject.toml README.md openenv.yaml requirements.txt ./
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip setuptools wheel && \
-    printf 'torch==2.5.1+cpu\n' > /tmp/constraints.txt && \
-    python -m pip install --prefix=/install \
-        --extra-index-url https://download.pytorch.org/whl/cpu \
-        -c /tmp/constraints.txt -r requirements.txt
+COPY pyproject.toml README.md openenv.yaml ./
 
 COPY llmserve_env ./llmserve_env
 COPY server ./server
 COPY agents ./agents
 COPY rl ./rl
 COPY data ./data
+COPY weights ./weights
 COPY inference.py evaluate.py train.py ./
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --prefix=/install --no-deps .
+    python -m pip install --upgrade pip setuptools wheel && \
+    printf 'torch==2.5.1+cpu\n' > /tmp/constraints.txt && \
+    python -m pip install --prefix=/install \
+        --extra-index-url https://download.pytorch.org/whl/cpu \
+        -c /tmp/constraints.txt .
 
 FROM python:3.11-slim
 
@@ -41,6 +39,7 @@ COPY server ./server
 COPY agents ./agents
 COPY rl ./rl
 COPY data ./data
+COPY weights ./weights
 COPY inference.py evaluate.py train.py ./
 
 EXPOSE 7860
